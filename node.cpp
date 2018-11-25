@@ -82,16 +82,7 @@ void Node::consume_events() {
         event = get_event();
         switch (event) {
             case network_layer_ready: /* the network layer has a packet to send */
-                // cout << "net layer ready" << endl; //todo: remove
-                //check first if we didn't exceed the sender sliding window
-                if (nbuffered < MAX_SEQ) {
-                    /* Accept, save, and transmit a new frame. */
-                    from_network_layer(&buffer[next_frame_to_send]);    /* fetch new packet */
-                    nbuffered = nbuffered + 1;                          /* expand the sender’s window */
-                    send_data(next_frame_to_send, buffer);              /* transmit the frame */
-                    inc(next_frame_to_send);                            /* advance sender’s upper window edge */
-                }
-                // cout << "net layer done" << endl; //todo: remove
+                handle_network_layer_ready();
                 break;
             case frame_arrival:          /* a data or control frame has arrived */
                 from_physical_layer(&r); /* get incoming frame from physical layer */
@@ -113,13 +104,27 @@ void Node::consume_events() {
                 }
                 break;
             case timeout:                          /* trouble; retransmit all outstanding frames */
-                next_frame_to_send = ack_expected; /* start retransmitting here */
-                for (seq_nr i = 1; i <= nbuffered; i++)
-                {
-                    send_data(next_frame_to_send, buffer); /* resend frame */
-                    inc(next_frame_to_send);                               /* prepare to send the next one */
-                }
+                handle_timeout();
         }
+    }
+}
+
+void Node::handle_network_layer_ready() {
+    //check first if we didn't exceed the sender sliding window
+    if (nbuffered < MAX_SEQ) {
+        /* Accept, save, and transmit a new frame. */
+        from_network_layer(&buffer[next_frame_to_send]);    /* fetch new packet */
+        nbuffered = nbuffered + 1;                          /* expand the sender’s window */
+        send_data(next_frame_to_send, buffer);              /* transmit the frame */
+        inc(next_frame_to_send);                            /* advance sender’s upper window edge */
+    }
+}
+
+void Node::handle_timeout() {
+    next_frame_to_send = ack_expected;      /* start retransmitting here */
+    for (seq_nr i = 1; i <= nbuffered; i++) {
+        send_data(next_frame_to_send, buffer);  /* resend frame */
+        inc(next_frame_to_send);                /* prepare to send the next one */
     }
 }
 
@@ -155,10 +160,35 @@ void Node::timer_tick() {
 const int padding = 13;
 const int space = 40;
 
+
+void Sender::handle_network_layer_ready() {
+    //check first if we didn't exceed the sender sliding window
+    if (nbuffered < MAX_SEQ) {
+        /* Accept, save, and transmit a new frame. */
+        from_network_layer(&buffer[next_frame_to_send]);    /* fetch new packet */
+        nbuffered = nbuffered + 1;                          /* expand the sender’s window */
+        send_data(next_frame_to_send, buffer);              /* transmit the frame */
+        inc(next_frame_to_send);                            /* advance sender’s upper window edge */
+    } else {
+        cout << setw(padding) << left << "(Sender)";
+        cout << "Reached limit of sliding window, waiting for ACK/timeout" << endl;
+    }
+}
+
+void Sender::handle_timeout() {
+    cout << setw(padding) << left << "(Sender)";
+    cout << "Timeout for frame #" << ack_expected << ", resending..." << endl;
+    next_frame_to_send = ack_expected;      /* start retransmitting here */
+    for (seq_nr i = 1; i <= nbuffered; i++) {
+        send_data(next_frame_to_send, buffer);  /* resend frame */
+        inc(next_frame_to_send);                /* prepare to send the next one */
+    }
+}
+
 void Sender::send_data(seq_nr frame_nr, packet buffer[]) {
     Node::send_data(frame_nr, buffer);
     cout << setw(padding) << left << "(Sender)";
-    cout << "Sent: " << buffer[frame_nr].data << endl;
+    cout << "Sent: " << buffer[frame_nr].data << " (#" << frame_nr << ")" << endl;
 }
 
 

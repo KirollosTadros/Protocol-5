@@ -64,6 +64,8 @@ public:
     void stop_timer(seq_nr k);
 
     void consume_events();
+    virtual void handle_network_layer_ready();
+    virtual void handle_timeout();
     virtual void received_ack(seq_nr frame_nr);
     virtual void received_data(frame *r);
     void timer_tick();
@@ -76,6 +78,8 @@ public:
     Receiver* my_receiver;
     std::queue<frame> physical_incoming_buffer;
     std::queue<packet> network_incoming_buffer;
+    void handle_network_layer_ready();
+    void handle_timeout();
     void send_data(seq_nr frame_nr, packet buffer[]);
     void from_network_layer(packet *p);
     void to_network_layer(packet *p);
