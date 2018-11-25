@@ -40,7 +40,6 @@ void protocol5(void) {
     seq_nr nbuffered;           /* number of output buffers currently in use */
     seq_nr i;                   /* used to index into the buffer array */
     event_type event;
-    enable_network_layer();     /* allow network layer ready events */
     ack_expected = 0;           /* next ack_expected inbound */
     next_frame_to_send = 0;     /* next frame going out */
     frame_expected = 0;         /* number of frame_expected inbound */
@@ -49,11 +48,14 @@ void protocol5(void) {
         wait_for_event(&event); /* four possibilities: see event_type above */
         switch (event) {
             case network_layer_ready: /* the network layer has a packet to send */
-                /* Accept, save, and transmit a new frame. */
-                from_network_layer(&buffer[next_frame_to_send]);       /* fetch new packet */
-                nbuffered = nbuffered + 1;                             /* expand the sender’s window */
-                send_data(next_frame_to_send, frame_expected, buffer); /* transmit the frame */
-                inc(next_frame_to_send);                               /* advance sender’s upper window edge */
+                //check first if we didn't exceed the sender sliding window
+                if (nbuffered < MAX_SEQ) {
+                    /* Accept, save, and transmit a new frame. */
+                    from_network_layer(&buffer[next_frame_to_send]);       /* fetch new packet */
+                    nbuffered = nbuffered + 1;                             /* expand the sender’s window */
+                    send_data(next_frame_to_send, frame_expected, buffer); /* transmit the frame */
+                    inc(next_frame_to_send);                               /* advance sender’s upper window edge */
+                }
                 break;
             case frame_arrival:          /* a data or control frame has arrived */
                 from_physical_layer(&r); /* get incoming frame from physical layer */
@@ -80,9 +82,5 @@ void protocol5(void) {
                     inc(next_frame_to_send);                               /* prepare to send the next one */
                 }
         }
-        if (nbuffered < MAX_SEQ)
-            enable_network_layer();
-        else
-            disable_network_layer();
     }
 }
