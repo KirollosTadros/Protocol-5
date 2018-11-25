@@ -33,11 +33,13 @@ void Node::send_ack(seq_nr frame_nr) {
 }
 
 bool Node::has_event() {
-    //todo: implement
+    return !event_queue.empty();
 }
 
 event_type Node::get_event() {
-    //todo: implement
+    event_type result = event_queue.front();
+    event_queue.pop();
+    return result;
 }
 
 /* Fetch a packet from the network layer for transmission on the channel. */
