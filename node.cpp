@@ -5,6 +5,7 @@ Node::Node() {
     next_frame_to_send = 0;     /* next frame going out */
     frame_expected = 0;         /* number of frame_expected inbound */
     nbuffered = 0;              /* initially no packets are buffered */
+    timeout_default = 10;
 }
 
 bool Node::between(seq_nr a, seq_nr b, seq_nr c) {
@@ -62,11 +63,11 @@ void Node::to_physical_layer(frame *s) {
 
 /* Start the clock running and enable the timeout event. */
 void Node::start_timer(seq_nr k) {
-    //todo: implement
+    timers[k] = timeout_default;
 }
 /* Stop the clock and disable the timeout event. */
 void Node::stop_timer(seq_nr k) {
-    //todo: implement
+    timers[k] = -1;
 }
 
 void Node::consume_events() {

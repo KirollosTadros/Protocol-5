@@ -38,6 +38,7 @@ public:
     event_type event;
     timer_t timers[MAX_SEQ + 1];    //a timer for each frame in the sliding window
     std::queue<event_type> event_queue;
+    unsigned int timeout_default;   //value of timeout before re-sending a frame
 
     Node();
     bool between(seq_nr a, seq_nr b, seq_nr c);
