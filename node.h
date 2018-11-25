@@ -1,6 +1,8 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <queue>
+
 #define MAX_SEQ 7
 
 typedef enum {
@@ -20,6 +22,7 @@ typedef struct {        /* frames are transported in this layer */
     seq_nr ack;         /* acknowledgement number */
     packet info;        /* the network layer packet */
 } frame;
+typedef unsigned int timer_t;
 
 /* Macro inc is expanded in-line: increment k circularly. */
 #define inc(k) if (k < MAX_SEQ) k = k + 1; else k = 0
@@ -33,6 +36,8 @@ public:
     seq_nr nbuffered;           /* (SENDER) number of output buffers currently in use */
     frame r;                    /* scratch variable */
     event_type event;
+    timer_t timers[MAX_SEQ + 1];    //a timer for each frame in the sliding window
+    std::queue<event_type> event_queue;
 
     Node();
     bool between(seq_nr a, seq_nr b, seq_nr c);
