@@ -77,11 +77,22 @@ void Node::stop_timer(seq_nr k) {
     timers[k] = -1;
 }
 
+/* Allow the network layer to cause a network layer ready event. */
+void Node::enable_network_layer() {
+    //override
+}
+/* Forbid the network layer from causing a network layer ready event. */
+void Node::disable_network_layer() {
+    //override
+}
+
 void Node::consume_events() {
     while (has_event()) {
         event = get_event();
         switch (event) {
             case network_layer_ready: /* the network layer has a packet to send */
+                //this event will be received only when we still haven't
+                //exceeded the sliding window limit, so we can send
                 handle_network_layer_ready();
                 break;
             case frame_arrival:          /* a data or control frame has arrived */
@@ -106,18 +117,21 @@ void Node::consume_events() {
             case timeout:                          /* trouble; retransmit all outstanding frames */
                 handle_timeout();
         }
+
+        if (nbuffered < MAX_SEQ) {
+            enable_network_layer();
+        } else {
+            disable_network_layer();
+        }
     }
 }
 
 void Node::handle_network_layer_ready() {
-    //check first if we didn't exceed the sender sliding window
-    if (nbuffered < MAX_SEQ) {
-        /* Accept, save, and transmit a new frame. */
-        from_network_layer(&buffer[next_frame_to_send]);    /* fetch new packet */
-        nbuffered = nbuffered + 1;                          /* expand the sender’s window */
-        send_data(next_frame_to_send, buffer);              /* transmit the frame */
-        inc(next_frame_to_send);                            /* advance sender’s upper window edge */
-    }
+    /* Accept, save, and transmit a new frame. */
+    from_network_layer(&buffer[next_frame_to_send]);    /* fetch new packet */
+    nbuffered = nbuffered + 1;                          /* expand the sender’s window */
+    send_data(next_frame_to_send, buffer);              /* transmit the frame */
+    inc(next_frame_to_send);                            /* advance sender’s upper window edge */
 }
 
 void Node::handle_timeout() {
@@ -153,13 +167,27 @@ void Node::timer_tick() {
     }
 }
 
+//variables to control output formatting in Sender and Receiver
+const int padding = 13;
+const int space = 40;
 
 
 /* Sender */
 
-const int padding = 13;
-const int space = 40;
+Sender::Sender() : Node() {
+    network_events_enabled = true;
+}
 
+/* Allow the network layer to cause a network layer ready event. */
+void Sender::enable_network_layer() {
+    network_events_enabled = true;
+}
+/* Forbid the network layer from causing a network layer ready event. */
+void Sender::disable_network_layer() {
+    network_events_enabled = false;
+    cout << setw(padding) << left << "(Sender)";
+    cout << "Reached limit of sliding window, waiting for ACK/timeout" << endl;
+}
 
 void Sender::handle_network_layer_ready() {
     //check first if we didn't exceed the sender sliding window
@@ -169,9 +197,6 @@ void Sender::handle_network_layer_ready() {
         nbuffered = nbuffered + 1;                          /* expand the sender’s window */
         send_data(next_frame_to_send, buffer);              /* transmit the frame */
         inc(next_frame_to_send);                            /* advance sender’s upper window edge */
-    } else {
-        cout << setw(padding) << left << "(Sender)";
-        cout << "Reached limit of sliding window, waiting for ACK/timeout" << endl;
     }
 }
 

@@ -63,6 +63,11 @@ public:
     /* Stop the clock and disable the timeout event. */
     void stop_timer(seq_nr k);
 
+    /* Allow the network layer to cause a network layer ready event. */
+    virtual void enable_network_layer();
+    /* Forbid the network layer from causing a network layer ready event. */
+    virtual void disable_network_layer();
+
     void consume_events();
     virtual void handle_network_layer_ready();
     virtual void handle_timeout();
@@ -78,6 +83,10 @@ public:
     Receiver* my_receiver;
     std::queue<frame> physical_incoming_buffer;
     std::queue<packet> network_incoming_buffer;
+    bool network_events_enabled;
+    Sender();
+    void enable_network_layer();
+    void disable_network_layer();
     void handle_network_layer_ready();
     void handle_timeout();
     void send_data(seq_nr frame_nr, packet buffer[]);

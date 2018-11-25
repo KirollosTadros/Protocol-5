@@ -25,7 +25,7 @@ int main() {
     }
 
     while (true) {
-        if (!sender.network_incoming_buffer.empty()) {
+        if (!sender.network_incoming_buffer.empty() && sender.network_events_enabled) {
             sender.event_queue.push(network_layer_ready);
         }
         sender.consume_events();
