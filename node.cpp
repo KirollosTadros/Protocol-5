@@ -1,5 +1,6 @@
 #include "node.h"
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -93,12 +94,7 @@ void Node::consume_events() {
                 from_physical_layer(&r); /* get incoming frame from physical layer */
                 switch (r.kind) {
                     case frame_kind::data:
-                        if (r.seq == frame_expected) {
-                            /* Frames are accepted only in order. */
-                            to_network_layer(&r.info); /* pass packet to network layer */
-                            send_ack(frame_expected);
-                            inc(frame_expected);       /* advance lower edge of receiver’s window */
-                        }
+                        received_data(&r);
                     break;
                     case ack:
                         /* Ack n implies n - 1, n - 2, etc. Check for this. */
@@ -128,6 +124,15 @@ void Node::received_ack(seq_nr frame_nr) {
     //override
 }
 
+void Node::received_data(frame *r) {
+    if (r->seq == frame_expected) {
+        /* Frames are accepted only in order. */
+        to_network_layer(&r->info); /* pass packet to network layer */
+        send_ack(frame_expected);
+        inc(frame_expected);       /* advance lower edge of receiver’s window */
+    }
+}
+
 void Node::timer_tick() {
     for (int i=0; i<MAX_SEQ+1; ++i) {
         if (timers[i] > -1) {
@@ -143,6 +148,12 @@ void Node::timer_tick() {
 
 
 /* Sender */
+
+void Sender::send_data(seq_nr frame_nr, packet buffer[]) {
+    Node::send_data(frame_nr, buffer);
+    cout << setw(15) << left << "(Sender)";
+    cout << "Sent: " << buffer[frame_nr].data << endl;
+}
 
 
 void Sender::from_network_layer(packet *p) {
@@ -166,7 +177,8 @@ void Sender::to_physical_layer(frame *s) {
 }
 
 void Sender::received_ack(seq_nr frame_nr) {
-    cout << "(Sender) Received ACK #" << frame_nr << endl;    
+    cout << setw(15) << left << "(Sender)";
+    cout << "Received ACK #" << frame_nr << endl;    
 }
 
 
@@ -174,12 +186,21 @@ void Sender::received_ack(seq_nr frame_nr) {
 /* Receiver */
 
 
+void Receiver::received_data(frame *r) {
+    Node::received_data(r);
+    cout << setw(50) << "";
+    cout << setw(15) << left << "(Receiver)";
+    cout << "Received: " << r->info.data << " (#" << r->seq << ")" << endl;
+}
+
+
 void Receiver::from_network_layer(packet *p) {
     //will not happen
 }
 
 void Receiver::to_network_layer(packet *p) {
-    cout << "(Receiver) Received: " << p->data << endl;
+    //do nothing, will print received data
+    //inside Receiver::received_data() method
 }
 
 void Receiver::from_physical_layer(frame *r) {
