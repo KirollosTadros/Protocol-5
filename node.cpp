@@ -149,9 +149,12 @@ void Node::timer_tick() {
 
 /* Sender */
 
+const int padding = 13;
+const int space = 40;
+
 void Sender::send_data(seq_nr frame_nr, packet buffer[]) {
     Node::send_data(frame_nr, buffer);
-    cout << setw(15) << left << "(Sender)";
+    cout << setw(padding) << left << "(Sender)";
     cout << "Sent: " << buffer[frame_nr].data << endl;
 }
 
@@ -177,7 +180,7 @@ void Sender::to_physical_layer(frame *s) {
 }
 
 void Sender::received_ack(seq_nr frame_nr) {
-    cout << setw(15) << left << "(Sender)";
+    cout << setw(padding) << left << "(Sender)";
     cout << "Received ACK #" << frame_nr << endl;    
 }
 
@@ -187,12 +190,27 @@ void Sender::received_ack(seq_nr frame_nr) {
 
 
 void Receiver::received_data(frame *r) {
-    Node::received_data(r);
-    cout << setw(50) << "";
-    cout << setw(15) << left << "(Receiver)";
-    cout << "Received: " << r->info.data << " (#" << r->seq << ")" << endl;
+    if (r->seq == frame_expected) {
+        /* Frames are accepted only in order. */
+        cout << setw(space) << "";
+        cout << setw(padding) << left << "(Receiver)";
+        cout << "Received: " << r->info.data << " (#" << r->seq << ")" << endl;
+        to_network_layer(&r->info); /* pass packet to network layer */
+        send_ack(frame_expected);
+        inc(frame_expected);       /* advance lower edge of receiver’s window */
+    } else {
+        cout << setw(space) << "";
+        cout << setw(padding) << left << "(Receiver)";
+        cout << "Received unexpected: " << r->info.data << " (#" << r->seq << ") [DISCARDED]" << endl;
+    }
 }
 
+void Receiver::send_ack(seq_nr frame_nr) {
+    Node::send_ack(frame_nr);
+    cout << setw(space) << "";
+    cout << setw(padding) << left << "(Receiver)";
+    cout << "Sent ACK (#" << frame_nr << ")" << endl;
+}
 
 void Receiver::from_network_layer(packet *p) {
     //will not happen

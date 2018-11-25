@@ -43,7 +43,7 @@ public:
     Node();
     bool between(seq_nr a, seq_nr b, seq_nr c);
     virtual void send_data(seq_nr frame_nr, packet buffer[]);
-    void send_ack(seq_nr frame_nr);
+    virtual void send_ack(seq_nr frame_nr);
 
     bool has_event();
     event_type get_event();
@@ -88,6 +88,7 @@ class Receiver : public Node {
 public:
     Sender* my_sender;
     std::queue<frame> physical_incoming_buffer;
+    void send_ack(seq_nr frame_nr);
     void received_data(frame *r);
     void from_network_layer(packet *p);
     void to_network_layer(packet *p);
