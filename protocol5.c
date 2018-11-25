@@ -7,7 +7,6 @@ the network layer causes a network layer ready event when there is a packet to s
 
 typedef enum {
     frame_arrival,
-    cksum_err,
     timeout,
     network_layer_ready
 } event_type;
@@ -73,8 +72,6 @@ void protocol5(void) {
                     inc(ack_expected);         /* contract sender’s window */
                 }
                 break;
-            case cksum_err:
-                break;                             /* just ignore bad frames */
             case timeout:                          /* trouble; retransmit all outstanding frames */
                 next_frame_to_send = ack_expected; /* start retransmitting here */
                 for (i = 1; i <= nbuffered; i++)
