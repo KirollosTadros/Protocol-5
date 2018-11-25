@@ -64,6 +64,28 @@ public:
     void stop_timer(seq_nr k);
 
     void consume_events();
+    void received_ack(seq_nr frame_nr);
+};
+
+class Sender : public Node {
+public:
+    Receiver* my_receiver;
+    std::queue<frame> physical_incoming_buffer;
+    void from_network_layer(packet *p);
+    void to_network_layer(packet *p);
+    void from_physical_layer(frame *r);
+    void to_physical_layer(frame *s);
+    void received_ack(seq_nr frame_nr);
+};
+
+class Receiver : public Node {
+public:
+    Sender* my_sender;
+    std::queue<frame> physical_incoming_buffer;
+    void from_network_layer(packet *p);
+    void to_network_layer(packet *p);
+    void from_physical_layer(frame *r);
+    void to_physical_layer(frame *s);
 };
 
 #endif //NODE_H

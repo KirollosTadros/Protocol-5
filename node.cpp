@@ -1,4 +1,9 @@
 #include "node.h"
+#include <iostream>
+#include <string>
+#include <cstring>
+
+using namespace std;
 
 Node::Node() {
     ack_expected = 0;           /* next ack_expected inbound */
@@ -19,7 +24,7 @@ bool Node::between(seq_nr a, seq_nr b, seq_nr c) {
 void Node::send_data(seq_nr frame_nr, packet buffer[]) {
     /* Construct and send a data frame. */
     frame s;                                            /* scratch variable */
-    s.kind = data;
+    s.kind = frame_kind::data;
     s.info = buffer[frame_nr];                          /* insert packet into frame */
     s.seq = frame_nr;                                   /* insert sequence number into frame */
     to_physical_layer(&s);                              /* transmit the frame */
@@ -87,7 +92,7 @@ void Node::consume_events() {
             case frame_arrival:          /* a data or control frame has arrived */
                 from_physical_layer(&r); /* get incoming frame from physical layer */
                 switch (r.kind) {
-                    case data:
+                    case frame_kind::data:
                         if (r.seq == frame_expected) {
                             /* Frames are accepted only in order. */
                             to_network_layer(&r.info); /* pass packet to network layer */
@@ -98,11 +103,11 @@ void Node::consume_events() {
                     case ack:
                         /* Ack n implies n - 1, n - 2, etc. Check for this. */
                         while (between(ack_expected, r.ack, next_frame_to_send)) {
-                            /* Handle piggybacked ack. */
                             nbuffered = nbuffered - 1; /* one frame fewer buffered */
                             stop_timer(ack_expected);  /* frame arrived intact; stop timer */
                             inc(ack_expected);         /* contract sender’s window */
                         }
+                        received_ack(r.ack);
                     break;
                     default:
                         ; //do nothing, not reached
@@ -119,3 +124,57 @@ void Node::consume_events() {
     }
 }
 
+void Node::received_ack(seq_nr frame_nr) {
+    //todo: implement
+}
+
+
+
+/* Sender */
+
+void Sender::from_network_layer(packet *p) {
+    string s;
+    getline(cin, s);
+    strcpy((char *) p->data, s.c_str());
+}
+
+void Sender::to_network_layer(packet *p) {
+    //will not happen (except for ACK which
+    //is handled by received_ack() method)
+}
+
+void Sender::from_physical_layer(frame *r) {
+    *r = physical_incoming_buffer.front();
+    physical_incoming_buffer.pop();
+}
+
+void Sender::to_physical_layer(frame *s) {
+    my_receiver->physical_incoming_buffer.push(*s);
+    my_receiver->event_queue.push(frame_arrival);
+}
+
+void Node::received_ack(seq_nr frame_nr) {
+    cout << "(Sender) Received ACK #" << frame_nr << endl;    
+}
+
+
+
+/* Receiver */
+
+void Receiver::from_network_layer(packet *p) {
+    //will not happen
+}
+
+void Receiver::to_network_layer(packet *p) {
+    cout << "(Receiver) Received: " << p->data << endl;
+}
+
+void Receiver::from_physical_layer(frame *r) {
+    *r = physical_incoming_buffer.front();
+    physical_incoming_buffer.pop();
+}
+
+void Receiver::to_physical_layer(frame *s) {
+    my_sender->physical_incoming_buffer.push(*s);
+    my_sender->event_queue.push(frame_arrival);
+}
