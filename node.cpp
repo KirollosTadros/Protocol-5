@@ -1,7 +1,5 @@
 #include "node.h"
 #include <iostream>
-#include <string>
-#include <cstring>
 
 using namespace std;
 
@@ -50,20 +48,20 @@ event_type Node::get_event() {
 
 /* Fetch a packet from the network layer for transmission on the channel. */
 void Node::from_network_layer(packet *p) {
-    //todo: implement
+    //override
 }
 /* Deliver information from an inbound frame to the network layer. */
 void Node::to_network_layer(packet *p) {
-    //todo: implement
+    //override
 }
 
 /* Go get an inbound frame from the physical layer and copy it to r. */
 void Node::from_physical_layer(frame *r) {
-    //todo: implement
+    //override
 }
 /* Pass the frame to the physical layer for transmission. */
 void Node::to_physical_layer(frame *s) {
-    //todo: implement
+    //override
 }
 
 /* Start the clock running and enable the timeout event. */
@@ -80,6 +78,7 @@ void Node::consume_events() {
         event = get_event();
         switch (event) {
             case network_layer_ready: /* the network layer has a packet to send */
+                // cout << "net layer ready" << endl; //todo: remove
                 //check first if we didn't exceed the sender sliding window
                 if (nbuffered < MAX_SEQ) {
                     /* Accept, save, and transmit a new frame. */
@@ -88,6 +87,7 @@ void Node::consume_events() {
                     send_data(next_frame_to_send, buffer);              /* transmit the frame */
                     inc(next_frame_to_send);                            /* advance sender’s upper window edge */
                 }
+                // cout << "net layer done" << endl; //todo: remove
                 break;
             case frame_arrival:          /* a data or control frame has arrived */
                 from_physical_layer(&r); /* get incoming frame from physical layer */
@@ -125,17 +125,29 @@ void Node::consume_events() {
 }
 
 void Node::received_ack(seq_nr frame_nr) {
-    //todo: implement
+    //override
+}
+
+void Node::timer_tick() {
+    for (int i=0; i<MAX_SEQ+1; ++i) {
+        if (timers[i] > -1) {
+            timers[i] -= 1;
+        }
+        if (timers[i] == 0) {
+            event_queue.push(timeout);
+            timers[i] = -1;
+        }
+    }
 }
 
 
 
 /* Sender */
 
+
 void Sender::from_network_layer(packet *p) {
-    string s;
-    getline(cin, s);
-    strcpy((char *) p->data, s.c_str());
+    *p = network_incoming_buffer.front();
+    network_incoming_buffer.pop();
 }
 
 void Sender::to_network_layer(packet *p) {
@@ -153,13 +165,14 @@ void Sender::to_physical_layer(frame *s) {
     my_receiver->event_queue.push(frame_arrival);
 }
 
-void Node::received_ack(seq_nr frame_nr) {
+void Sender::received_ack(seq_nr frame_nr) {
     cout << "(Sender) Received ACK #" << frame_nr << endl;    
 }
 
 
 
 /* Receiver */
+
 
 void Receiver::from_network_layer(packet *p) {
     //will not happen
