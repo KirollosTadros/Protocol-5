@@ -9,7 +9,10 @@ Node::Node() {
     next_frame_to_send = 0;     /* next frame going out */
     frame_expected = 0;         /* number of frame_expected inbound */
     nbuffered = 0;              /* initially no packets are buffered */
-    timeout_default = 10;
+    for (int i=0; i<MAX_SEQ+1; ++i) {
+        stop_timer(i);  //initially all timers are stopped
+    }
+    timeout_default = 10000;
 }
 
 bool Node::between(seq_nr a, seq_nr b, seq_nr c) {

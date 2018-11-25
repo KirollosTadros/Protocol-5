@@ -22,7 +22,7 @@ typedef struct {        /* frames are transported in this layer */
     seq_nr ack;         /* acknowledgement number */
     packet info;        /* the network layer packet */
 } frame;
-typedef unsigned int timer_t;
+typedef int timer_t;
 
 /* Macro inc is expanded in-line: increment k circularly. */
 #define inc(k) if (k < MAX_SEQ) k = k + 1; else k = 0
@@ -63,7 +63,7 @@ public:
     /* Stop the clock and disable the timeout event. */
     void stop_timer(seq_nr k);
 
-    virtual void consume_events();
+    void consume_events();
     virtual void received_ack(seq_nr frame_nr);
     virtual void received_data(frame *r);
     void timer_tick();
