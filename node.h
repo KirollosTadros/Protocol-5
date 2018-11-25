@@ -24,5 +24,40 @@ typedef struct {        /* frames are transported in this layer */
 /* Macro inc is expanded in-line: increment k circularly. */
 #define inc(k) if (k < MAX_SEQ) k = k + 1; else k = 0
 
+class Node {
+public:
+    seq_nr next_frame_to_send;  /* (SENDER) MAX_SEQ > 1; used for outbound stream */
+    seq_nr ack_expected;        /* (SENDER) oldest frame as yet unacknowledged */
+    seq_nr frame_expected;      /* (RECEIVER) next frame_expected on inbound stream */
+    packet buffer[MAX_SEQ + 1]; /* (SENDER) buffers for the outbound stream */
+    seq_nr nbuffered;           /* (SENDER) number of output buffers currently in use */
+    frame r;                    /* scratch variable */
+    event_type event;
+
+    Node();
+    bool between(seq_nr a, seq_nr b, seq_nr c);
+    void send_data(seq_nr frame_nr, packet buffer[]);
+    void send_ack(seq_nr frame_nr);
+
+    bool has_event();
+    event_type get_event();
+
+    /* Fetch a packet from the network layer for transmission on the channel. */
+    void from_network_layer(packet *p);
+    /* Deliver information from an inbound frame to the network layer. */
+    void to_network_layer(packet *p);
+
+    /* Go get an inbound frame from the physical layer and copy it to r. */
+    void from_physical_layer(frame *r);
+    /* Pass the frame to the physical layer for transmission. */
+    void to_physical_layer(frame *s);
+
+    /* Start the clock running and enable the timeout event. */
+    void start_timer(seq_nr k);
+    /* Stop the clock and disable the timeout event. */
+    void stop_timer(seq_nr k);
+
+    void consume_events();
+};
 
 #endif //NODE_H
