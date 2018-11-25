@@ -1,16 +1,5 @@
 #include "node.h"
 
-
-#define MAX_SEQ 7
-
-typedef enum {
-    frame_arrival,
-    timeout,
-    network_layer_ready
-} event_type;
-
-#include "protocol.h"
-
 class Node {
 public:
     seq_nr next_frame_to_send;  /* (SENDER) MAX_SEQ > 1; used for outbound stream */
@@ -59,6 +48,33 @@ public:
 
     event_type get_event() {
         //todo: implement
+    }
+
+    /* Fetch a packet from the network layer for transmission on the channel. */
+    void from_network_layer(packet *p) {
+        
+    }
+    /* Deliver information from an inbound frame to the network layer. */
+    void to_network_layer(packet *p) {
+        
+    }
+
+    /* Go get an inbound frame from the physical layer and copy it to r. */
+    void from_physical_layer(frame *r) {
+        
+    }
+    /* Pass the frame to the physical layer for transmission. */
+    void to_physical_layer(frame *s) {
+        
+    }
+
+    /* Start the clock running and enable the timeout event. */
+    void start_timer(seq_nr k) {
+        
+    }
+    /* Stop the clock and disable the timeout event. */
+    void stop_timer(seq_nr k) {
+        
     }
 
     void consume_events() {
