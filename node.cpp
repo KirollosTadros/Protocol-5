@@ -216,7 +216,6 @@ void Sender::send_data(seq_nr frame_nr, packet buffer[]) {
     cout << "Sent: " << buffer[frame_nr].data << " (#" << frame_nr << ")" << endl;
 }
 
-
 void Sender::from_network_layer(packet *p) {
     *p = network_incoming_buffer.front();
     network_incoming_buffer.pop();
@@ -246,8 +245,18 @@ void Sender::received_ack(seq_nr frame_nr) {
 
 /* Receiver */
 
+Receiver::Receiver() {
+    drop_frame = -1;
+}
 
 void Receiver::received_data(frame *r) {
+    if (drop_frame == r->seq) {
+        //simulate not receiving this frame
+        cout << "------------------" << "Frame dropped (#" << r->seq << ")";
+        cout << "------------------" << endl;
+        drop_frame = -1;
+        return;
+    }
     if (r->seq == frame_expected) {
         /* Frames are accepted only in order. */
         cout << setw(space) << "";

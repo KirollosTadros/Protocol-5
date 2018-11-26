@@ -101,6 +101,8 @@ class Receiver : public Node {
 public:
     Sender* my_sender;
     std::queue<frame> physical_incoming_buffer;
+    int drop_frame;         //number of frame to simulate not receiving
+    Receiver();
     void send_ack(seq_nr frame_nr);
     void received_data(frame *r);
     void from_network_layer(packet *p);
